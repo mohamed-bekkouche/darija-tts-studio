@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Review — Job {{ status.job_id }}{% endblock %}
+
+{% block content %}
+<div class="review-layout">
+  <aside class="review-sidebar">
+    <div class="sidebar-header">
+      <h3>Clips</h3>
+      <p class="muted" id="progress-label">0 / {{ transcripts | length }} reviewed</p>
+    </div>
+    <ul class="clip-list" id="clip-list">
+      {% for tr in transcripts %}
+      <li data-index="{{ loop.index0 }}"
+          data-status="{{ tr.review_status or 'pending' }}"
+          class="clip-item {% if loop.first %}active{% endif %}">
+        <span class="clip-index">{{ '%03d' % (loop.index0 + 1) }}</span>
+        <span class="clip-status-dot"></span>
+        <span class="clip-preview">{{ (tr.normalized or tr.raw or '')[:40] }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <section class="review-main" id="review-main" data-job-id="{{ status.job_id }}">
+    <div class="review-header">
+      <h2 id="clip-title">Clip 001 / {{ '%03d' % transcripts | length }}</h2>
+      <span id="clip-status-badge" class="state state-pending">pending</span>
+    </div>
+
+    <div id="unmatched-warning" class="warning-banner" style="display:none">
+      ⚠ <strong>Unmatched French words detected:</strong>
+      <span id="unmatched-list"></span>
+      <br><span class="muted">Please verify with the audio.</span>
+    </div>
+
+    <audio id="audio-player" controls preload="none"></audio>
+
+    <div class="version-block">
+      <label>Raw (Whisper)</label>
+      <div class="version-text raw" id="text-raw">—</div>
+    </div>
+
+    <div class="version-block" id="precleaned-block" style="display:none">
+      <label>Pre-cleaned (dictionary)</label>
+      <div class="version-text precleaned" id="text-precleaned">—</div>
+    </div>
+
+    <div class="version-block">
+      <label>Normalized (LLM)</label>
+      <div class="version-text normalized" id="text-normalized">—</div>
+    </div>
+
+    <div class="version-block" id="changes-block" style="display:none">
+      <label>LLM changes</label>
+      <ul class="changes-list" id="changes-list"></ul>
+    </div>
+
+    <div class="version-block" id="uncertain-block" style="display:none">
+      <label>⚠ Uncertain words</label>
+      <div class="uncertain-words" id="uncertain-words"></div>
+    </div>
+
+    <div class="version-block">
+      <label>Final (your version — goes to training)</label>
+      <textarea id="text-final" class="final-textarea" rows="4"
+                placeholder="Type or paste the final transcript here…"></textarea>
+    </div>
+
+    <div class="review-confidence">
+      <label>Review confidence:</label>
+      <div class="confidence-buttons">
+        <button type="button" class="conf-btn" data-conf="accepted_quick">⚡ Quick</button>
+        <button type="button" class="conf-btn" data-conf="verified">✓ Verified</button>
+        <button type="button" class="conf-btn" data-conf="edited">✏️ Edited</button>
+      </div>
+      <p class="muted" id="confidence-hint">
+        <strong>Quick:</strong> accept without careful listening (not used for training)<br>
+        <strong>Verified:</strong> you listened carefully (used for training)<br>
+        <strong>Edited:</strong> you changed the transcript (used for training)
+      </p>
+    </div>
+
+    <div class="filler-toolbar" id="filler-toolbar">
+      {% for token, label in filler_vocab %}
+      <button type="button" class="filler-btn"
+              data-token="{{ token }}"
+              title="{{ label }}">{{ token }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="review-actions">
+      <button id="btn-accept" class="btn-accept">✓ Accept (Enter)</button>
+      <button id="btn-reject" class="btn-reject">✗ Reject (X)</button>
+      <button id="btn-skip"   class="btn-skip">⏭ Skip</button>
+      <button id="btn-revert" class="btn-revert">↩ Revert to LLM</button>
+    </div>
+
+    <div class="review-nav">
+      <button id="btn-prev">← Previous (←)</button>
+      <span class="muted" id="nav-position">1 / {{ transcripts | length }}</span>
+      <button id="btn-next">Next (→)</button>
+    </div>
+  </section>
+</div>
+
+<div id="dict-popup" class="dict-popup" style="display:none">
+  <div class="dict-popup-inner">
+    <h3>Add to French dictionary?</h3>
+    <p class="muted">
+      You changed this text. Confirm the phonetic → French mapping below.
+      Both fields are editable — you can use multi-word phrases.
+    </p>
+    <div class="dict-popup-row">
+      <label>Phonetic (Arabic, as Whisper wrote it):</label>
+      <input type="text" id="dict-phonetic" dir="rtl"
+             placeholder="مثال: لي كيب">
+    </div>
+    <div class="dict-popup-row">
+      <label>French (correct spelling):</label>
+      <input type="text" id="dict-french" dir="ltr"
+             placeholder="ex: L'équipe">
+    </div>
+    <div class="dict-popup-actions">
+      <button id="dict-save" class="btn-accept">Add to dictionary</button>
+      <button id="dict-skip" class="btn-skip">No thanks</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.__CLIPS__ = {{ transcripts | tojson }};
+  window.__JOB_ID__ = {{ status.job_id | tojson }};
+</script>
+<script src="/static/review.js"></script>
+{% endblock %}

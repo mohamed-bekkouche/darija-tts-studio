@@ -1,0 +1,120 @@
+{
+  "version": "2.0",
+  "over_annotation_rule": "Only tag non-speech events when they are clearly audible and meaningful. Don't label every tiny breath or background noise.",
+  "locked_at": "2026-10-10",
+  "language": "algerian_dardja",
+  "purpose": "phone_agent_tts",
+
+  "language_rules": {
+    "dardja_words": "arabic_script",
+    "french_words": "latin_script_correct_spelling",
+    "code_switching": "preserve_mixed",
+    "fillers": "preserve_all_occurrences",
+    "repetitions": "preserve",
+    "self_corrections": "preserve",
+    "meaning": "never_change",
+    "paraphrase": "never"
+  },
+
+  "numbers": {
+    "policy": "match_what_was_spoken",
+    "rule": "If speaker said Arabic number → Arabic word. If French → French word. If unclear → flag for review. NEVER convert between languages.",
+    "examples": {
+      "تلاتة": "تلاتة",
+      "trois": "trois",
+      "خمسمية": "خمسمية",
+      "cinq cents": "cinq cents",
+      "مية وأربعين ألف": "مية وأربعين ألف"
+    },
+    "digits_policy": "no_digits_in_final_transcript",
+    "note": "Digits must be written out in the language the speaker used."
+  },
+
+  "dardja_spelling": {
+    "policy": "conservative_canonical",
+    "rule": "Use canonical spelling for common words only. Preserve regional/pronunciation variants. Never change meaning or pronunciation.",
+    "dictionary_file": "dardja_spelling.json",
+    "apply_when": "word matches a canonical entry exactly (no fuzzy)",
+    "traceability": "log all changes to llm_changes"
+  },
+
+  "french_spelling": {
+    "policy": "correct_french",
+    "rule": "Use correct French spelling. Preserve code-switching. Never translate French to Arabic or vice versa.",
+    "dictionary_file": "french_phrases_user.json"
+  },
+
+  "fillers_canonical": {
+    "hesitation": "آآ",
+    "thinking": "امم",
+    "acknowledgment": "آه",
+    "laughter_vocal": "ههه"
+  },
+
+  "non_speech_tags": {
+    "allowed": [
+      "[ضحك]",
+      "[سعال]",
+      "[نفس]",
+      "[ضجيج]",
+      "[غير مسموع]",
+      "[كلام متداخل]",
+      "[مقاطعة]"
+    ],
+    "policy": "conservative",
+    "rule": "Insert only when clearly audible AND meaningful. Never infer from words alone. [ضجيج] only for significant noise, not ambient.",
+    "llm_can_invent": false
+  },
+
+  "punctuation": {
+    "policy": "normalize_excessive",
+    "rule": "Collapse ... → ., ؟؟؟ → ؟, !!! → !. Preserve meaningful pauses and questions.",
+    "allowed": ["،", ".", "؟", "!", "..."]
+  },
+
+  "mixed_script_tokens": {
+    "policy": "split",
+    "rule": "Split accidentally joined Arabic+Latin when intended words are clear. Example: رانيgoing → راني going."
+  },
+
+  "number_word_spacing": {
+    "policy": "insert_space",
+    "rule": "3commandes → 3 commandes. Always space between number and word."
+  },
+
+  "clip_length": {
+    "min_seconds": 2.5,
+    "max_seconds": 15.0,
+    "flag_too_short": true,
+    "flag_bad_boundary": true
+  },
+
+  "review_confidence": {
+    "field": "review_confidence",
+    "values": {
+      "verified": "Reviewer listened carefully and confirmed transcript",
+      "accepted_quick": "Accepted without careful listening — requires verification before training",
+      "edited": "Transcript was changed during review"
+    },
+    "default": "accepted_quick",
+    "separate_from": "review_status"
+  },
+
+  "training_export": {
+    "include_only": ["verified", "edited"],
+    "exclude": ["accepted_quick"],
+    "exclude_pending": true,
+    "exclude_rejected": true,
+    "exclude_unresolved_low_confidence": true
+  },
+
+  "llm_role": "assist_only",
+  "human_review_required": true,
+
+  "transcript_layers": {
+    "raw": "exact Whisper output — never modified",
+    "pre_cleaned": "after French dictionary pass",
+    "normalized": "after LLM cleanup",
+    "final": "human-verified — used for training"
+  }
+}

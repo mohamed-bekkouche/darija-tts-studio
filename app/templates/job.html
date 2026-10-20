@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Job {{ status.job_id }} — Dardja TTS Studio{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="job-header">
+    <h2>Job <code>{{ status.job_id }}</code></h2>
+    <span id="state-badge" class="state state-{{ status.state }}">{{ status.state }}</span>
+  </div>
+
+  <table class="job-meta">
+    <tr><td>File</td><td>{{ status.original_filename }}</td></tr>
+    <tr><td>Speaker</td><td>{{ status.speaker }}</td></tr>
+    <tr><td>Message</td><td id="message">{{ status.message }}</td></tr>
+  </table>
+
+  <div class="progress-wrap">
+    <div id="progress-bar" class="progress-bar" style="width: {{ (status.progress * 100) | round(1) }}%"></div>
+  </div>
+  <p id="progress-text" class="muted">{{ (status.progress * 100) | round(1) }}%</p>
+</section>
+
+<section class="card">
+  <h2>Logs</h2>
+  <pre id="logs" class="logs">Loading…</pre>
+</section>
+{% if status.state == 'ready_for_review' %}
+<p><a href="/jobs/{{ status.job_id }}/review" class="btn-primary">▶ Open review UI</a></p>
+{% endif %}
+<p><a href="/">← Back to jobs</a></p>
+{% endblock %}
+
+{% block scripts %}
+<div id="job-root" data-job-id="{{ status.job_id }}"></div>
+<script src="/static/app.js"></script>
+{% endblock %}
